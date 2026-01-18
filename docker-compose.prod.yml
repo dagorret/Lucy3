@@ -1,0 +1,30 @@
+services:
+  app:
+    build:
+      context: .
+      target: production
+    container_name: lucy-prod
+    restart: always
+    networks:
+      - lucy-net
+
+  web:
+    image: nginx:alpine
+    container_name: lucy-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker-conf/nginx-prod:/etc/nginx/conf.d/
+    networks:
+      - lucy-net
+    restart: always
+
+  worker: # El reemplazo de Celery
+    build:
+      context: .
+      target: production
+    container_name: lucy-worker
+    command: php artisan queue:work
+    networks:
+      - lucy-net
+    restart: always

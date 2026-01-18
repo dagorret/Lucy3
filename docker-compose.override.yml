@@ -1,0 +1,43 @@
+services:
+  app:
+    build:
+      context: .
+      target: development
+      args:
+        - USER_ID=${DOCKER_USER_ID:-1000}
+        - GROUP_ID=${DOCKER_GROUP_ID:-1000}
+    container_name: lucy-app
+    volumes:
+      - ./:/var/www
+    networks:
+      - lucy-net
+
+  web:
+    image: nginx:alpine
+    container_name: lucy-web
+    ports:
+      - "8084:80"
+      - "5173:5173" # Puerto para Vite (Vue)
+    volumes:
+      - ./:/var/www
+      - ./docker-conf/nginx:/etc/nginx/conf.d/
+    networks:
+      - lucy-net
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: lucy-pma
+    ports:
+      - "8085:80"
+    environment:
+      - PMA_HOST=db
+    networks:
+      - lucy-net
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: lucy-mail
+    ports:
+      - "8025:8025"
+    networks:
+      - lucy-net

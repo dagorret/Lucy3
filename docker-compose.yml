@@ -1,0 +1,74 @@
+services:
+  # 1. El Cerebro (PHP 8.4)
+  app:
+    build:
+      context: .
+      target: development
+    container_name: lucy-app
+    restart: unless-stopped
+    volumes:
+      - .:/var/www
+    networks:
+      - lucy-net
+
+  # 2. El Portero (Nginx)
+  web:
+    image: nginx:alpine
+    container_name: lucy-web
+    restart: unless-stopped
+    ports:
+      - "8084:80"
+      - "5173:5173"
+    volumes:
+      - .:/var/www
+      - ./docker-conf/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - lucy-net
+
+  # 3. La Base de Datos
+  db:
+    image: mariadb:10.11
+    container_name: lucy-db
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-lucy}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - lucy-net
+
+  # 4. El Caché
+  redis:
+    image: redis:alpine
+    container_name: lucy-redis
+    networks:
+      - lucy-net
+
+  # 5. Herramienta de DB (Opcional pero recomendada)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: lucy-pma
+    ports:
+      - "8085:80"
+    environment:
+      PMA_HOST: db
+    networks:
+      - lucy-net
+
+  # 6. Atrapasueños de correos (Mailpit)
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: lucy-mail
+    ports:
+      - "8025:8025"
+    networks:
+      - lucy-net
+
+networks:
+  lucy-net:
+    driver: bridge
+
+volumes:
+  db-data:
